@@ -19,7 +19,7 @@ class Repo
       branches: client.branches.local,
       tags: client.tags.map(&:name),
       commits: commit_count,
-      readme: client.object('HEAD:README.md').contents,
+      readme: readme,
       files: client.gtree('HEAD').children.each_pair.map do |name, blob|
         {
           name: name,
@@ -28,6 +28,18 @@ class Repo
         }
       end
     }
+  end
+
+  def readme
+    return nil unless readme_filename
+    client.object("HEAD:#{readme_filename}").contents
+  end
+
+  def readme_filename
+    client.gtree('HEAD').children.keys.find do |name|
+      return name if name.casecmp('readme.md').zero?
+    end
+    nil
   end
 
   def latest_commit
