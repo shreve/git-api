@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+require 'bundler'
+require 'irb'
+
+Bundler.setup
+require 'git'
+
+require_relative '../app'
+
+IRB.start
