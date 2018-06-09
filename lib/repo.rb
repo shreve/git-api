@@ -4,7 +4,7 @@ class Repo
   end
 
   def client
-    @client ||= Git.open(@path)
+    @client ||= Git.bare(@path)
   end
 
   def list_item
@@ -48,7 +48,23 @@ class Repo
 
   def commit_count(rev = 'HEAD')
     rev = '--all' if rev == :all
-    `git '--git-dir=#{@path}/.git' rev-list --count #{rev}`.to_i
+    `git '--git-dir=#{@path}' rev-list --count #{rev}`.to_i
+  end
+
+  def commit(params)
+    sha = params.fetch('sha', nil)
+    commit = client.gcommit(sha)
+    begin
+      commit.message
+      commit
+    rescue Git::GitExecuteError
+      nil
+    end
+  end
+
+  def commits(params)
+    page = params.fetch('page', 1).to_i - 1
+    client.log.skip(page * 30)
   end
 
   class << self
@@ -58,7 +74,7 @@ class Repo
 
     def all
       Dir
-        .glob('**/.git', base: PROJECTS_DIR)
+        .glob('**/HEAD', base: PROJECTS_DIR)
         .map { |fn| Repo.find File.dirname(fn) }
     end
   end
