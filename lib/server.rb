@@ -15,7 +15,7 @@ class Server
     @routes.each do |route|
       next if (content = route.run(request)) == false
       return not_found if content.nil?
-      return [200, DEFAULT_HEADERS, [content.to_json]]
+      return [200, DEFAULT_HEADERS, [content.to_response.to_json]]
     end
 
     not_found
@@ -36,14 +36,14 @@ class Server
 
     def get(route_spec, &block)
       # Replace all param placeholders with named regex matches
-      pattern = route_spec.gsub(/:\w+/) { |w| "(?<#{w[1..-1]}>.*)" }
-      pattern = %r{\A#{pattern}\z}
+      pattern = route_spec.gsub(/:\w+/) { |w| "(?<#{w[1..-1]}>.+)" }
+      pattern = %r{\A#{pattern}/?\z}
 
       @routes << Route.new(pattern, block)
     end
 
     def each(&block)
-      @routes.each(&block)
+      @routes.reverse.each(&block)
     end
   end
 

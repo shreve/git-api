@@ -7,29 +7,6 @@ class Repo
     @client ||= Git.bare(@path)
   end
 
-  def list_item
-    {
-      name: @path.sub(PROJECTS_DIR + '/', ''),
-      updated_at: latest_commit.date
-    }
-  end
-
-  def show
-    {
-      branches: client.branches.local,
-      tags: client.tags.map(&:name),
-      commits: commit_count,
-      readme: readme,
-      files: client.gtree('HEAD').children.each_pair.map do |name, blob|
-        {
-          name: name,
-          directory: blob.tree?,
-          size: (blob.size unless blob.tree?)
-        }
-      end
-    }
-  end
-
   def readme
     return nil unless readme_filename
     client.object("HEAD:#{readme_filename}").contents
@@ -64,7 +41,10 @@ class Repo
 
   def commits(params)
     page = params.fetch('page', 1).to_i - 1
-    client.log.skip(page * 30)
+    client.log.skip(page * 30).tap do |log|
+      # Force fetch the log
+      log.instance_eval { check_log }
+    end
   end
 
   class << self
