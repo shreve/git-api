@@ -13,10 +13,17 @@ class Server
     request = Rack::Request.new(env)
 
     @routes.each do |route|
-      next unless (content = route.run(request))
+      next if (content = route.run(request)) == false
+      return not_found if content.nil?
       return [200, DEFAULT_HEADERS, [content.to_json]]
     end
 
+    not_found
+  end
+
+  private
+
+  def not_found
     [404, {}, ['']]
   end
 
@@ -43,7 +50,7 @@ class Server
   Route = Struct.new(:pattern, :block) do
     def run(request)
       match = pattern.match(request.path)
-      return unless match
+      return false unless match
 
       params = request.params.merge(match.named_captures)
 
